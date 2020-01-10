@@ -74,12 +74,14 @@ int main (int argc, char **argv)
   start_time = get_current_time();
            
   /* main loop */
-
+  
+  #pragma acc parallel vector_length(512) copyin(new,old,edge) copyout(new)
   for (iter=1;iter<=ITERATIONS; iter++)
     {
       
       /* perform stencil operation */
 
+      #pragma acc loop vector collapse(2)
       for (i=1;i<N+1;i++)
 	{
 	  for (j=1;j<N+1;j++)
@@ -91,6 +93,7 @@ int main (int argc, char **argv)
       
       /* copy output back to input buffer */
 
+      #pragma acc loop vector collapse(2)
       for (i=1;i<N+1;i++)
 	{
 	  for (j=1;j<N+1;j++)

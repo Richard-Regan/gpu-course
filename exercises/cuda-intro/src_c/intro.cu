@@ -14,7 +14,8 @@
 void checkCUDAError(const char*);
 
 /* The number of integer elements in the array */
-#define ARRAY_SIZE 256
+//#define ARRAY_SIZE 256
+#define ARRAY_SIZE 500
 
 /*
  * The number of CUDA blocks and threads per block to use.
@@ -28,10 +29,18 @@ void checkCUDAError(const char*);
 
 /* The actual array negation kernel (basic single block version) */
 
-__global__ void negate(int * d_a) {
+__global__ void negate(int * d_a, int size) {
 
   /* Part 2B: negate an element of d_a */
 
+   //int idx = threadIdx.x;
+
+   int location = blockIdx.x*blockDim.x + threadIdx.x;
+
+   //printf(" %d<%d\n",location, size);
+
+   if( location < size)
+      d_a[location] = -1 * d_a[location];
 }
 
 /* Multi-block version of kernel for part 2C */
@@ -39,7 +48,6 @@ __global__ void negate(int * d_a) {
 __global__ void negate_multiblock(int *d_a) {
 
   /* Part 2C: negate an element of d_a, using multiple blocks this time */
-
 }
 
 /* Main routine */
@@ -72,6 +80,8 @@ int main(int argc, char *argv[]) {
    * allocate memory on device
    */
   /* Part 1A: allocate device memory */
+  cudaMalloc(&d_a, sz);
+
 
 
   /* initialise host arrays */
@@ -84,11 +94,25 @@ int main(int argc, char *argv[]) {
   /* Part 1B: copy host array h_a to device array d_a */
 
 
+  cudaMemcpy(d_a, h_a, sz,cudaMemcpyHostToDevice);
   /* run the kernel on the GPU */
   /* Part 2A: configure and launch kernel (un-comment and complete) */
   /* dim3 blocksPerGrid( ); */
   /* dim3 threadsPerBlock( ); */
   /* negate<<< , >>>( ); */
+
+  dim3 NumberOfBlocks;
+  //dim3 threadsPerBlock(1,1,1);
+
+  NumberOfBlocks.x = ((ARRAY_SIZE-1)/THREADS_PER_BLOCK) + 1;
+
+  NumberOfBlocks.y = 1;
+  NumberOfBlocks.z = 1;
+
+  //printf(" Blocks %d \n",NumberOfBlocks);
+
+  //negate<<<blocksPerGrid,threadsPerBlock>>>(d_a);
+  negate<<<NumberOfBlocks,THREADS_PER_BLOCK>>>(d_a, ARRAY_SIZE);
 
 
   /* wait for all threads to complete and check for errors */
@@ -98,6 +122,8 @@ int main(int argc, char *argv[]) {
 
   /* copy the result array back to the host */
   /* Part 1C: copy device array d_a to host array h_out */
+
+  cudaMemcpy(h_out, d_a, sz,cudaMemcpyDeviceToHost);
 
   checkCUDAError("memcpy");
 
@@ -110,7 +136,7 @@ int main(int argc, char *argv[]) {
 
   /* free device buffer */
   /* Part 1D: free d_a */
-
+  cudaFree(d_a);
   /* free host buffers */
   free(h_a);
   free(h_out);

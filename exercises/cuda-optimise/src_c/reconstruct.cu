@@ -93,8 +93,15 @@ if ( N%THREADSPERBLOCK != 0 ){
 
 
   /* CUDA decomposition */
-    dim3 blocksPerGrid(N/THREADSPERBLOCK,1,1);
-    dim3 threadsPerBlock(THREADSPERBLOCK,1,1);
+  //dim3 blocksPerGrid(N/THREADSPERBLOCK,1,1);
+
+#define THREADS 512
+
+    ///dim3 blocksPerGrid(N/16,N/16,1);
+    dim3 blocksPerGrid(N/THREADS,N/THREADS,1);
+  //dim3 threadsPerBlock(THREADSPERBLOCK,1,1);
+    ///dim3 threadsPerBlock(THREADS,THREADS,1);
+    dim3 threadsPerBlock(32,32,1);
 
    printf("Blocks: %d %d %d\n",blocksPerGrid.x,blocksPerGrid.y,blocksPerGrid.z);
    printf("Threads per block: %d %d %d\n",threadsPerBlock.x,threadsPerBlock.y,threadsPerBlock.z);
@@ -119,15 +126,18 @@ if ( N%THREADSPERBLOCK != 0 ){
 
 
     /* copy the output data from device to host */
-    cudaMemcpy(output, d_output, memSize, cudaMemcpyDeviceToHost);
+    //cudaMemcpy(output, d_output, memSize, cudaMemcpyDeviceToHost);
 
     /* copy this same data from host to input buffer on device */
     /*  ready for the next iteration */ 
-    cudaMemcpy( d_input, output, memSize, cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_input, output, memSize, cudaMemcpyHostToDevice);
+    cudaMemcpy( d_input, d_output, memSize, cudaMemcpyDeviceToDevice);
 
   }
 
 
+  cudaMemcpy(output, d_output, memSize, cudaMemcpyDeviceToHost);
+  
   end_time_inc_data = get_current_time();
 
   checkCUDAError("Main loop");
